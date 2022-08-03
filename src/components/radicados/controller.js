@@ -1,8 +1,10 @@
 const consecutivos = require('./model');
 const templateRadicado = require('../../libs/radicado')
-const alfresco = require('../../libs/alfresco')
+const alfresco = require('../../libs/alfresco');
+const config = require('../../config');
 const RadicadosCtrl = {};
-
+const fs = require('fs')
+const moment = require('moment')
 const alfrescoModule = new alfresco()
 
 RadicadosCtrl.getRadicados = async (req, res) => {
@@ -16,7 +18,7 @@ RadicadosCtrl.getRadicados = async (req, res) => {
 };
 
 RadicadosCtrl.getRadicado = async (req, res) => {
-  let message;
+  let message, stiker;
   let numero_solicitud;
   try {
     const id = req.body.solicitud;
@@ -45,6 +47,8 @@ RadicadosCtrl.getRadicado = async (req, res) => {
         numero_solicitud: numero_solicitud,
       };
       await updateSolicitud(queryYearConsecutive, id);
+      
+      const numeroSolicitudPad = await padLeft(numero_solicitud)
 
       const { 
         medio_recepcion,
@@ -58,21 +62,33 @@ RadicadosCtrl.getRadicado = async (req, res) => {
         compania,
         clases_asunto,
         tipo_documental,
-        numero_solicitud
+        numeroSolicitudPad
       }
-
+      const path = await pathRadicado()
       const createStiker = await templateRadicado(opts)
+
       if (createStiker) {
-        alfrescoModule.uploadFile()
+        const token = await alfrescoModule.CreateToken()
+        const fileToUpload = fs.createReadStream(`${__dirname}/../../../temp/${numeroSolicitudPad}.pdf`)
+        const result = await alfrescoModule.uploadFile(
+          fileToUpload,
+          path,
+          config.PARENT_NODE_ID_BARCODE,
+          token.entry.id
+        )
+        stiker = {
+          nodeId: result.entry.id,
+          name: result.entry.name
+        } 
+        
       }
 
+
+      fs.unlinkSync(`${__dirname}/../../../temp/${numeroSolicitudPad}.pdf`);
       message = {
-        consecutivo: numero_solicitud
+        stiker,
+        consecutivo: numeroSolicitudPad
       };
-
-      
-
-
     }
     res.json(message);
   } catch (error) {
@@ -121,5 +137,16 @@ const updateSolicitud = async (query, id) => {
     return false;
   }
 };
+
+
+const pathRadicado = async () => {
+  const path = moment().format('YYYY/MM/DD')
+ return path
+}
+
+
+const padLeft = async (number) => {
+  return String(number).padStart(10, '0')
+}
 
 module.exports = RadicadosCtrl;

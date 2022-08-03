@@ -1,13 +1,13 @@
-const PDFDocument = require('pdfkit');
-const fs = require('fs');
-const moment = require('moment');
+const PDFDocument = require("pdfkit");
+const fs = require("fs");
+const moment = require("moment");
 // create a document the same way as above
 
 const createPdf = async (data) => {
   try {
-    const date = moment().locale('es').format('LLL');
+    const date = moment().locale("es").format("DD-MM-YYYY HH:mm");
     const doc = new PDFDocument({
-      size: [300, 125],
+      size: [300, 110],
       margins: {
         top: 7,
         bottom: 2,
@@ -21,40 +21,43 @@ const createPdf = async (data) => {
       compania,
       clases_asunto,
       tipo_documental,
-      numero_solicitud,
+      numeroSolicitudPad,
     } = data;
 
-    doc.text('Radicado N°.', { align: 'center' }).font('Times-Roman', 25);
+    doc.image(`${__dirname}/../../assets/images/Logo_Tigo.png`, 8, 18, {
+      width: 50,
+    });
+
+    doc.font(`${__dirname}/../../assets/fonts/Roboto-Bold.ttf`, 9).text("Empresa:", 70, 5);
+    doc.font(`${__dirname}/../../assets/fonts/Roboto-Regular.ttf`, 9).text(compania, 120, 5);
+    doc.font(`${__dirname}/../../assets/fonts/Roboto-Bold.ttf`, 9).text("Nº. Radicado:", 70, 16);
+    doc.font(`${__dirname}/../../assets/fonts/Roboto-Regular.ttf`, 9).text(numeroSolicitudPad, 135, 16);
+    doc.font(`${__dirname}/../../assets/fonts/Roboto-Bold.ttf`, 9).text("Fecha:", 70, 27);
+    doc.font(`${__dirname}/../../assets/fonts/Roboto-Regular.ttf`, 9).text(date, 100, 27);
+
+    //doc.font(`${__dirname}/../../assets/fonts/Roboto-Bold.ttf`, 9).text("Folios:", 220, 27);
+    //doc.font(`${__dirname}/../../assets/fonts/Roboto-Regular.ttf`, 9).text(medio_recepcion, 250, 27);
+
+    doc.font(`${__dirname}/../../assets/fonts/Roboto-Bold.ttf`, 9).text("Asunto:", 70, 38);
+    doc.font(`${__dirname}/../../assets/fonts/Roboto-Regular.ttf`, 9).text(clases_asunto, 70, 49);
+    doc.font(`${__dirname}/../../assets/fonts/Roboto-Bold.ttf`, 9).text("Tipo Documental:", 200, 38);
+    doc.font(`${__dirname}/../../assets/fonts/Roboto-Regular.ttf`, 9).text(tipo_documental, 200, 49);
+
     doc
       .font(
         `${__dirname}/../../assets/fonts/LibreBarcode39Text-Regular.ttf`,
-        35
+        25
       )
-      .text(`*${numero_solicitud}*`, { align: 'center' });
-
-    doc.font('Times-Bold', 10).text('Fecha:', 6, 64);
-    doc.font('Times-Roman', 10).text(date, 5, 64, { align: 'right' });
-    doc.font('Times-Bold', 10).text('Medio Recepcion:', 6, 75);
-    doc
-      .font('Times-Roman', 10)
-      .text(medio_recepcion, 90, 75, { align: 'right' });
-    doc.font('Times-Bold', 10).text('Compania:', 6, 86);
-    doc.font('Times-Roman', 10).text(compania, 90, 86, { align: 'right' });
-    doc.font('Times-Bold', 10).text('Asunto:', 6, 97);
-    doc.font('Times-Roman', 10).text(clases_asunto, 90, 97, { align: 'right' });
-    doc.font('Times-Bold', 10).text('Tipo Documental:', 6, 108);
-    doc
-      .font('Times-Roman', 10)
-      .text(tipo_documental, 90, 108, { align: 'right' });
-    doc.pipe(
-      fs.createWriteStream(`${__dirname}/../../temp/${numero_solicitud}.pdf`)
-    );
-
+      .text(`*${numeroSolicitudPad}*`, 0, 60, { align: "center" });
+      doc.pipe(
+        fs.createWriteStream(`${__dirname}/../../temp/${numeroSolicitudPad}.pdf`)
+      );
+  
     doc.end();
-    return true
+    return true;
   } catch (error) {
     console.log(error);
-    return false
+    return false;
   }
 };
 
